@@ -1,14 +1,19 @@
 const express = require('express')
 const cors = require('cors')
+const dotenv = require('dotenv')
+
+dotenv.config()
+
+const { createHandler } = require('graphql-http/lib/use/express')
+
+const schema = require('./app/schema/graphqlSchema')
 
 const app = express()
 
 app.use(cors())
 
-// parse requests of content-type - application/json
 app.use(express.json())
 
-// parse requests of content-type - application/x-www-form-urlencoded
 app.use(express.urlencoded({ extended: true }))
 
 const db = require('./app/models')
@@ -28,8 +33,19 @@ app.get('/', (req, res) => {
 
 require('./app/routes/tutorial.routes')(app)
 
+app.all(
+  '/graphql',
+  createHandler({
+    schema,
+    formatError: (error) => {
+      console.error('GraphQL Error:', error)
+      return error
+    },
+  })
+)
+
 // set port, listen for requests
-const PORT = process.env.PORT || 8080
+const PORT = process.env.PORT || 3000
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}.`)
 })
