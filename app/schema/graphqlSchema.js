@@ -9,6 +9,7 @@ const {
 
 const db = require('../models')
 const Tutorial = db.tutorials
+const Op = db.Sequelize.Op
 
 const TutorialType = new GraphQLObjectType({
   name: 'Tutorial',
@@ -25,9 +26,14 @@ const RootQueryType = new GraphQLObjectType({
   fields: {
     tutorials: {
       type: new GraphQLList(TutorialType),
+      args: { title: { type: GraphQLString } },
       resolve(parent, args) {
-        console.log('args=', args)
-        return Tutorial.findAll()
+        const condition = args.title
+          ? { title: { [Op.iLike]: `%${args.title}%` } }
+          : null
+        return args.title
+          ? Tutorial.findAll({ where: condition })
+          : Tutorial.findAll()
       },
     },
     tutorial: {
@@ -90,7 +96,7 @@ const MutationType = new GraphQLObjectType({
         return Tutorial.destroy({ where: { id: args.id } })
       },
     },
-    deleteAllTutorial: {
+    deleteAllTutorials: {
       type: GraphQLString,
       resolve(parent, args) {
         return Tutorial.destroy({ where: {} }).then(
